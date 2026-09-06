@@ -11,9 +11,9 @@
   },
   "w3_matrix": {
     "total": 31,
-    "verified": 22,
-    "needs_review": 4,
+    "verified": 23,
     "missing_inventory": 3,
+    "needs_review": 3,
     "failed": 2,
     "missing_actions": [
       "mum",
@@ -21,7 +21,6 @@
       "pytorch"
     ],
     "needs_review_actions": [
-      "macho",
       "ace",
       "chm",
       "swf"

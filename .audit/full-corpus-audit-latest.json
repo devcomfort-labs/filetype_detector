@@ -7998,7 +7998,7 @@
       "declared_reproduction_tier": "exact-byte",
       "generator_symbol": "scripts.generators.data_formats.DataFormatGenerator._create_dcm",
       "format_validity": "verified",
-      "validator": "python .audit/w3_validate.py --id sample-dcm",
+      "validator": "w3_validate.py:pydicom",
       "evidence_present": true,
       "identifiability": "distinctive",
       "cfb_conflict": false,
@@ -8256,7 +8256,7 @@
       "declared_reproduction_tier": "exact-byte",
       "generator_symbol": "scripts.generators.executables.ExecutableGenerator._create_pyc",
       "format_validity": "verified",
-      "validator": "python .audit/w3_validate.py --id sample-pyc",
+      "validator": "w3_validate.py:pyc-marshal",
       "evidence_present": true,
       "identifiability": "distinctive",
       "cfb_conflict": false,
@@ -13018,10 +13018,10 @@
       "source_kind": null,
       "declared_reproduction_tier": null,
       "generator_symbol": null,
-      "format_validity": null,
-      "validator": null,
+      "format_validity": "verified",
+      "validator": "macho_validate.py:macholib",
       "evidence_present": false,
-      "identifiability": null,
+      "identifiability": "distinctive",
       "cfb_conflict": false,
       "duplicate_sha_group": [
         "sample-macho"
@@ -13040,7 +13040,7 @@
       "declared_reproduction_tier": "exact-byte",
       "generator_symbol": "scripts.generators.ArchiveGenerator._create_snap",
       "format_validity": "verified",
-      "validator": "python .audit/w3_validate.py --id sample-squashfs",
+      "validator": "w3_validate.py:squashfs-unsquashfs",
       "evidence_present": true,
       "identifiability": "generic-container",
       "cfb_conflict": false,
@@ -13083,7 +13083,7 @@
       "declared_reproduction_tier": "exact-byte",
       "generator_symbol": "scripts.generators.macos.MacOSGenerator._create_dsstore",
       "format_validity": "verified",
-      "validator": "python .audit/w3_validate.py --id sample-dsstore",
+      "validator": "ds-store==1.3.3 DSStore.open",
       "evidence_present": true,
       "identifiability": "distinctive",
       "cfb_conflict": false,
@@ -13104,7 +13104,7 @@
       "declared_reproduction_tier": "exact-byte",
       "generator_symbol": "scripts.generators.images.ImageGenerator._create_emf",
       "format_validity": "verified",
-      "validator": "python .audit/metafile_validate.py --id sample-emf",
+      "validator": "metafile_validate.py:emf",
       "evidence_present": true,
       "identifiability": "distinctive",
       "cfb_conflict": false,
@@ -13125,7 +13125,7 @@
       "declared_reproduction_tier": "exact-byte",
       "generator_symbol": "scripts.generators.images.ImageGenerator._create_wmf",
       "format_validity": "verified",
-      "validator": "python .audit/metafile_validate.py --id sample-wmf",
+      "validator": "metafile_validate.py:wmf",
       "evidence_present": true,
       "identifiability": "distinctive",
       "cfb_conflict": false,
@@ -13146,7 +13146,7 @@
       "declared_reproduction_tier": "pinned-sha-roundtrip",
       "generator_symbol": null,
       "format_validity": "verified",
-      "validator": "python .audit/hlp_validate.py --id sample-hlp",
+      "validator": "hlp_validate.py:winhlp==0.3.0",
       "evidence_present": true,
       "identifiability": "distinctive",
       "cfb_conflict": false,
@@ -13470,7 +13470,18 @@
     "sample-wps",
     "sample-xlt"
   ],
-  "matrix_candidate_inconsistencies": [],
+  "matrix_candidate_inconsistencies": [
+    {
+      "action": "dsstore",
+      "inventory_id": "sample-dsstore",
+      "reason": "matrix validator evidence missing from candidate"
+    },
+    {
+      "action": "pythonbytecode",
+      "inventory_id": "sample-pyc",
+      "reason": "matrix validator evidence missing from candidate"
+    }
+  ],
   "queues": {
     "missing_fixture": [],
     "sha_mismatch": [],
@@ -14643,8 +14654,7 @@
       "sample-db",
       "sample-gz",
       "sample-gzip",
-      "sample-avro",
-      "sample-macho"
+      "sample-avro"
     ],
     "cfb_conflicts": [
       "sample-dot",
