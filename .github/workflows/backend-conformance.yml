@@ -58,9 +58,17 @@ jobs:
         shell: bash
         run: python -m pip install -r .audit/requirements-hlp.txt
 
+      - name: Install pinned Mach-O audit dependency
+        shell: bash
+        run: python -m pip install -r .audit/requirements-macho.txt
+
       - name: Validate WinHelp fixture
         shell: bash
         run: python .audit/hlp_validate.py --id sample-hlp
+
+      - name: Validate Mach-O fixture
+        shell: bash
+        run: python .audit/macho_validate.py
 
       - name: Validate APK binary XML with androguard
         shell: bash

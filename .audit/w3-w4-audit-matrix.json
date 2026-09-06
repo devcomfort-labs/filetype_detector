@@ -53,12 +53,14 @@
     {
       "action": "macho",
       "inventory_id": "sample-macho",
-      "validator_command": "python .audit/w3_validate.py --id sample-macho",
-      "format_validity": "not-run",
-      "content_identifiability": null,
-      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "validator_command": "python .audit/macho_validate.py",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "MIME/extension authority and promotion pending",
       "promotion_input": false,
-      "validator_evidence": []
+      "validator_evidence": [
+        "macholib parsed one Mach-O header"
+      ]
     },
     {
       "action": "mum",

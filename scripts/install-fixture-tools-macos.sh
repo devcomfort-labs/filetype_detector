@@ -10,8 +10,8 @@ command -v brew >/dev/null || {
 brew update
 brew install ffmpeg squashfs-tools
 brew install --cask libreoffice
-python3 -m pip install -r .audit/requirements-apk.txt
 python3 -m pip install -r .audit/requirements-hlp.txt
+python3 -m pip install -r .audit/requirements-macho.txt
 python3 -m pip install ds-store==1.3.3
 
 if ! command -v unsquashfs >/dev/null; then
