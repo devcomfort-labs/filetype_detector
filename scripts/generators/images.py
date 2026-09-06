@@ -38,6 +38,8 @@ class ImageGenerator(BaseGenerator):
             "heics",
             "heifs",
             "jxl",
+            "emf",
+            "wmf",
         ]
 
     @property
@@ -66,6 +68,8 @@ class ImageGenerator(BaseGenerator):
             "heics": "library:Pillow+pillow-heif",
             "heifs": "library:Pillow+pillow-heif",
             "jxl": "library:Pillow",
+            "emf": "synthetic:EMF records per MS-EMF",
+            "wmf": "synthetic:WMF records per MS-WMF",
         }
 
     @property
@@ -97,6 +101,8 @@ class ImageGenerator(BaseGenerator):
             "heics": self._create_heics,
             "heifs": self._create_heifs,
             "jxl": self._create_jxl,
+            "emf": self._create_emf,
+            "wmf": self._create_wmf,
         }
         return generators[ext]()
 
@@ -206,17 +212,59 @@ class ImageGenerator(BaseGenerator):
         )
 
     def _create_tga(self) -> bytes:
-        return (
-            struct.pack("<BBBBBHHBHH", 0, 0, 2, 0, 0, 0, 0, 0, 0, 0)
-            + struct.pack("<HH", 1, 1)
-            + struct.pack("<B", 24)
-            + struct.pack("<B", 0)
-            + b"\xff\x00\x00"
+        width, height = 16, 16
+        tga_hdr = struct.pack(
+            "<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 24, 0x20
         )
+        tga_pixels = b"\x80\x40\x20" * (width * height)
+        tga_footer = struct.pack("<II", 0, 0) + b"TRUEVISION-XFILE.\x00"
+        return tga_hdr + tga_pixels + tga_footer
 
     def _create_icns(self) -> bytes:
-        data = b"\x00\x00\x00\x00" * 16
-        return b"icns" + struct.pack(">I", 8 + len(data)) + data
+        png_data = (
+            b"\x89PNG\r\n\x1a\n"
+            b"\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\x00\x00\x00\x1f\xf3\xffa"
+            b"\x00\x00\x00\x1dIDATx\x9cc\xfc\xcf\xc0\xf0\x9f\x81\x02\xc0D\x89\xe6Q\x03F\x185`0\x19\x00\x00Xm\x02\x1e\xf5\xcc\xcf\xa2"
+            b"\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        icon_entry = b"ic07" + struct.pack(">I", 8 + len(png_data)) + png_data
+        return b"icns" + struct.pack(">I", 8 + len(icon_entry)) + icon_entry
+
+    def _create_emf(self) -> bytes:
+        header = bytearray(108)
+        struct.pack_into("<II", header, 0, 1, 108)
+        struct.pack_into("<iiii", header, 8, 0, 0, 100, 100)
+        struct.pack_into("<iiii", header, 24, 0, 0, 1000, 1000)
+        struct.pack_into(
+            "<IIIIIHHIII",
+            header,
+            40,
+            0x464D4520,
+            0x00010000,
+            160,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        struct.pack_into("<iiii", header, 72, 16, 16, 254, 190)
+        move = struct.pack("<IIii", 27, 16, 0, 0)
+        line = struct.pack("<IIii", 54, 16, 100, 100)
+        eof = struct.pack("<IIIII", 14, 20, 0, 0, 20)
+        return bytes(header) + move + line + eof
+
+    def _create_wmf(self) -> bytes:
+        records = (
+            struct.pack("<IHHH", 5, 0x0214, 0, 0)
+            + struct.pack("<IHHH", 5, 0x0213, 100, 100)
+            + struct.pack("<IH", 3, 0x0000)
+        )
+        max_words = (18 + len(records)) // 2
+        header = struct.pack("<HHHIHIH", 1, 9, 0x0300, max_words, 0, 5, 0)
+        return header + records
 
     def _create_psd(self) -> bytes:
         return b"8BPS" + struct.pack(">HH", 1, 0) + struct.pack(">IIII", 1, 1, 1, 8)

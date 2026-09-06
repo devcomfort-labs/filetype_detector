@@ -67,6 +67,7 @@ def _v2_record(fixture: Path, **overrides: object) -> dict[str, object]:
 
 
 def _write(tmp_path: Path, records: list[dict[str, object]]) -> Path:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     path = tmp_path / "inventory.json"
     path.write_text(json.dumps({"schema_version": 2, "records": records}))
     return path
@@ -225,3 +226,125 @@ def test_rejects_duplicate_evidence_claims(tmp_path: Path) -> None:
 
     with pytest.raises(InventoryValidationError, match="duplicate evidence claims"):
         _load_document(path, root=tmp_path, role="authoritative")
+
+
+# Q. Is setting both probe_extension and probe_filename rejected?
+def test_rejects_both_probe_set(tmp_path: Path) -> None:
+    fixture = tmp_path / "fixture.bin"
+    fixture.write_bytes(b"fixture bytes")
+    record = _v2_record(
+        fixture,
+        probe_filename="Gemfile",
+    )
+    path = _write(tmp_path, [record])
+
+    with pytest.raises(InventoryValidationError, match="mutually exclusive"):
+        _load_document(path, root=tmp_path, role="authoritative")
+
+
+# Q. Is neither probe_extension nor probe_filename rejected?
+def test_rejects_neither_probe_set(tmp_path: Path) -> None:
+    fixture = tmp_path / "fixture.bin"
+    fixture.write_bytes(b"fixture bytes")
+    record = _v2_record(fixture)
+    record.pop("probe_extension")
+    # _v2_record has no probe_filename by default
+    path = _write(tmp_path, [record])
+
+    with pytest.raises(InventoryValidationError, match="exactly one"):
+        _load_document(path, root=tmp_path, role="candidate")
+
+
+# Q. Is a verified filename-based record loaded with probe_filename, empty extensions, and filename_claims?
+def test_valid_filename_record_loads(tmp_path: Path) -> None:
+    fixture = tmp_path / "Gemfile"
+    fixture.write_bytes(b'source "https://rubygems.org"\ngem "rake"\n')
+    record = _v2_record(fixture)
+    del record["probe_extension"]
+    record["probe_filename"] = "Gemfile"
+    record["ground_truth"] = {
+        "mime_types": ["text/plain"],
+        "extensions": [],
+        "filenames": ["Gemfile"],
+    }
+    record["ground_truth_evidence"] = {
+        "mime_claims": [
+            {
+                "mime_type": "text/plain",
+                "authority": "iana-media-types",
+                "reference": "https://www.iana.org/assignments/media-types/text/plain",
+            }
+        ],
+        "filename_claims": [
+            {
+                "filename": "Gemfile",
+                "authority": "bundler-docs",
+                "reference": "https://bundler.io/docs/gemfile.html",
+            }
+        ],
+    }
+    path = _write(tmp_path, [record])
+
+    records = _load_document(path, root=tmp_path, role="candidate")
+    assert len(records) == 1
+    assert records[0].probe_filename == "Gemfile"
+    assert records[0].probe_extension is None
+    assert records[0].ground_truth.filenames == ("Gemfile",)
+    assert records[0].ground_truth.extensions == ()
+
+
+# Q. Does verified filename validation reject mismatched filename or missing claims?
+def test_verified_filename_record_invariant_rejections(tmp_path: Path) -> None:
+    fixture = tmp_path / "Gemfile"
+    fixture.write_bytes(b'source "https://rubygems.org"\n')
+
+    # 1. probe_filename not in ground_truth.filenames
+    rec1 = _v2_record(fixture)
+    del rec1["probe_extension"]
+    rec1["probe_filename"] = "Gemfile"
+    rec1["ground_truth"] = {
+        "mime_types": ["text/plain"],
+        "extensions": [],
+        "filenames": ["Rakefile"],
+    }
+    rec1["ground_truth_evidence"] = {
+        "mime_claims": [
+            {
+                "mime_type": "text/plain",
+                "authority": "iana",
+                "reference": "https://www.iana.org/assignments/media-types/text/plain",
+            }
+        ],
+        "filename_claims": [
+            {
+                "filename": "Rakefile",
+                "authority": "rake",
+                "reference": "https://github.com/ruby/rake",
+            }
+        ],
+    }
+    path1 = _write(tmp_path / "d1", [rec1])
+    with pytest.raises(InventoryValidationError, match="must appear in ground_truth.filenames"):
+        _load_document(path1, root=tmp_path, role="candidate")
+
+    # 2. filename_claims missing for claimed filename
+    rec2 = _v2_record(fixture)
+    del rec2["probe_extension"]
+    rec2["probe_filename"] = "Gemfile"
+    rec2["ground_truth"] = {
+        "mime_types": ["text/plain"],
+        "extensions": [],
+        "filenames": ["Gemfile"],
+    }
+    rec2["ground_truth_evidence"] = {
+        "mime_claims": [
+            {
+                "mime_type": "text/plain",
+                "authority": "iana",
+                "reference": "https://www.iana.org/assignments/media-types/text/plain",
+            }
+        ],
+    }
+    path2 = _write(tmp_path / "d2", [rec2])
+    with pytest.raises(InventoryValidationError, match="ground_truth_evidence.filename_claims must be a non-empty list"):
+        _load_document(path2, root=tmp_path, role="candidate")

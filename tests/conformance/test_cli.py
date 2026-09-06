@@ -66,7 +66,7 @@ def test_seed_writes_all_legacy_records_as_needs_review(tmp_path: Path) -> None:
     )
     candidates = json.loads(candidates_path.read_text(encoding="utf-8"))
 
-    assert candidates["schema_version"] == 1
+    assert candidates["schema_version"] == 2
     assert [record["id"] for record in candidates["records"]] == [
         "sample-bin",
         "other-txt",
@@ -204,7 +204,7 @@ def test_review_requires_no_unresolved_candidates(
     candidates_path = tmp_path / "backend_inventory_candidates.json"
     inventory_path = tmp_path / "backend_inventory.json"
     inventory_path.write_text(
-        json.dumps({"schema_version": 1, "records": []}), encoding="utf-8"
+        json.dumps({"schema_version": 2, "records": []}), encoding="utf-8"
     )
     main(
         [
@@ -249,7 +249,7 @@ def test_promote_fix_extensions_replaces_conflicting_legacy_extensions(
     candidates_path = tmp_path / "backend_inventory_candidates.json"
     inventory_path = tmp_path / "backend_inventory.json"
     inventory_path.write_text(
-        json.dumps({"schema_version": 1, "records": []}), encoding="utf-8"
+        json.dumps({"schema_version": 2, "records": []}), encoding="utf-8"
     )
     assert (
         main(
@@ -266,8 +266,47 @@ def test_promote_fix_extensions_replaces_conflicting_legacy_extensions(
         == 0
     )
     candidates = json.loads(candidates_path.read_text(encoding="utf-8"))
-    candidates["records"][0]["ground_truth"]["extensions"] = [".txt", ".mp4"]
+    rec = candidates["records"][0]
+    assert rec["id"] == "sample-bin"
+    rec["ground_truth"]["extensions"] = [".txt", ".mp4"]
     candidates_path.write_text(json.dumps(candidates), encoding="utf-8")
+
+    # Two-phase contract: --fix-extensions corrects aliases but does NOT promote.
+    # Fixed records stay needs_review; a separate call with fresh evidence promotes.
+    result = main(
+        [
+            "promote",
+            "--candidates",
+            str(candidates_path),
+            "--inventory",
+            str(inventory_path),
+            "--root",
+            str(tmp_path),
+            "--reviewer",
+            "fixture-reviewer",
+            "--date",
+            "2026-08-11",
+            "--evidence",
+            "format-spec.example",
+            "--fix-extensions",
+            "--ids",
+            "sample-bin",
+        ]
+    )
+    # sample-bin was fixed but NOT promoted (two-phase contract)
+    updated = json.loads(candidates_path.read_text(encoding="utf-8"))
+    fixed_rec = next(r for r in updated["records"] if r["id"] == "sample-bin")
+    assert fixed_rec["ground_truth"]["extensions"] == [".bin"]
+    assert fixed_rec["ground_truth_review"]["status"] == "needs_review"
+
+    # Phase 2: add axes and mark verified, then promote
+    from tests.conformance._inventory_factory import complete_v2_record
+
+    axes = complete_v2_record(fixed_rec)
+    fixed_rec["source_integrity"] = axes["source_integrity"]
+    fixed_rec["format_validity"] = axes["format_validity"]
+    fixed_rec["ground_truth_evidence"] = axes["ground_truth_evidence"]
+    candidates_path.write_text(json.dumps(updated), encoding="utf-8")
 
     assert (
         main(
@@ -285,14 +324,161 @@ def test_promote_fix_extensions_replaces_conflicting_legacy_extensions(
                 "2026-08-11",
                 "--evidence",
                 "format-spec.example",
-                "--fix-extensions",
-                "--all-clean",
+                "--ids",
+                "sample-bin",
             ]
         )
         == 0
     )
 
-    promoted_candidates = json.loads(candidates_path.read_text(encoding="utf-8"))
     promoted_inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-    assert promoted_candidates["records"][0]["ground_truth"]["extensions"] == [".bin"]
+    assert len(promoted_inventory["records"]) == 1
+    assert promoted_inventory["records"][0]["id"] == "sample-bin"
     assert promoted_inventory["records"][0]["ground_truth"]["extensions"] == [".bin"]
+
+
+# Q. Does promote leave files untouched when pre-write validation fails?
+def test_promote_atomic_on_missing_axes(tmp_path: Path) -> None:
+    source = _write_legacy_truth(tmp_path)
+    candidates_path = tmp_path / "backend_inventory_candidates.json"
+    inventory_path = tmp_path / "backend_inventory.json"
+    inventory_path.write_text(
+        json.dumps({"schema_version": 2, "records": []}), encoding="utf-8"
+    )
+    main(
+        [
+            "seed",
+            "--source",
+            str(source),
+            "--output",
+            str(candidates_path),
+            "--root",
+            str(tmp_path),
+        ]
+    )
+    candidates_before = candidates_path.read_bytes()
+    inventory_before = inventory_path.read_bytes()
+
+    with pytest.raises(SystemExit):
+        main(
+            [
+                "promote",
+                "--candidates",
+                str(candidates_path),
+                "--inventory",
+                str(inventory_path),
+                "--root",
+                str(tmp_path),
+                "--reviewer",
+                "test",
+                "--date",
+                "2026-08-24",
+                "--evidence",
+                "https://example.test",
+            ]
+        )
+
+    assert candidates_path.read_bytes() == candidates_before
+    assert inventory_path.read_bytes() == inventory_before
+
+
+# Q. Does promote leave files untouched when evidence has extra MIME claims?
+def test_promote_atomic_on_extra_evidence_claims(tmp_path: Path) -> None:
+    source = _write_legacy_truth(tmp_path)
+    candidates_path = tmp_path / "backend_inventory_candidates.json"
+    inventory_path = tmp_path / "backend_inventory.json"
+    inventory_path.write_text(
+        json.dumps({"schema_version": 2, "records": []}), encoding="utf-8"
+    )
+    main(
+        [
+            "seed",
+            "--source",
+            str(source),
+            "--output",
+            str(candidates_path),
+            "--root",
+            str(tmp_path),
+        ]
+    )
+
+    # Add axes with an extra MIME claim not present in GT
+    candidates = json.loads(candidates_path.read_text(encoding="utf-8"))
+    rec = candidates["records"][0]
+    from tests.conformance._inventory_factory import complete_v2_record
+
+    axes = complete_v2_record(rec)
+    rec["source_integrity"] = axes["source_integrity"]
+    rec["format_validity"] = axes["format_validity"]
+    rec["ground_truth_evidence"] = axes["ground_truth_evidence"]
+    rec["ground_truth_evidence"]["mime_claims"].append(
+        {
+            "mime_type": "application/x-fabricated-extra",
+            "authority": "fabricated source",
+            "reference": "https://fake.example/extra",
+        }
+    )
+    candidates_path.write_text(json.dumps(candidates), encoding="utf-8")
+
+    cand_before = candidates_path.read_bytes()
+    inv_before = inventory_path.read_bytes()
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(
+            [
+                "promote",
+                "--candidates",
+                str(candidates_path),
+                "--inventory",
+                str(inventory_path),
+                "--root",
+                str(tmp_path),
+                "--reviewer",
+                "test",
+                "--date",
+                "2026-08-24",
+                "--evidence",
+                "https://example.test",
+                "--ids",
+                "sample-bin",
+            ]
+        )
+    assert exc_info.value.code == 2
+
+    assert candidates_path.read_bytes() == cand_before
+    assert inventory_path.read_bytes() == inv_before
+
+
+# Q. Does promotion preserve a filename-only verified record without a fake extension?
+def test_promote_filename_only_record(tmp_path: Path) -> None:
+    fixture = tmp_path / "Gemfile"
+    fixture.write_text('source "https://rubygems.org"\n', encoding="utf-8")
+    digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
+    candidates_path = tmp_path / "candidates.json"
+    inventory_path = tmp_path / "inventory.json"
+    record = {
+        "id": "sample-gemfile",
+        "fixture": "Gemfile",
+        "sha256": digest,
+        "probe_filename": "Gemfile",
+        "ground_truth": {"mime_types": ["text/plain"], "extensions": [], "filenames": ["Gemfile"]},
+        "provenance": "filename-only fixture",
+        "ground_truth_review": {"status": "excluded", "reason": "awaiting review"},
+        "backends": ["lexical", "magic", "magika", "hybrid"],
+        "source_integrity": {"kind": "generated", "generator_symbol": "test", "recipe_hash": "a" * 64, "tier": "exact-byte"},
+        "format_validity": {"status": "verified", "validator": "test-validator", "evidence": ["syntax"]},
+        "content_identifiability": "distinctive",
+        "ground_truth_evidence": {
+            "mime_claims": [{"mime_type": "text/plain", "authority": "IANA", "reference": "https://www.iana.org/assignments/media-types/media-types.xhtml"}],
+            "filename_claims": [{"filename": "Gemfile", "authority": "Bundler", "reference": "https://bundler.io/guides/gemfile.html"}],
+        },
+    }
+    payload = {"schema_version": 2, "records": [record]}
+    candidates_path.write_text(json.dumps(payload), encoding="utf-8")
+    inventory_path.write_text(json.dumps({"schema_version": 2, "records": []}), encoding="utf-8")
+    assert main(["promote", "--candidates", str(candidates_path), "--inventory", str(inventory_path), "--root", str(tmp_path), "--ids", "sample-gemfile", "--reviewer", "automated-independent-validator", "--date", "2026-08-29", "--evidence", "test-validator"]) == 0
+    promoted = json.loads(inventory_path.read_text(encoding="utf-8"))["records"][0]
+    assert promoted["probe_filename"] == "Gemfile"
+    assert "probe_extension" not in promoted
+    assert promoted["ground_truth"]["extensions"] == []
+    assert promoted["ground_truth"]["filenames"] == ["Gemfile"]

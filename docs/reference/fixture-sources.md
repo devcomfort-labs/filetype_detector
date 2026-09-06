@@ -1,12 +1,12 @@
 # Fixture Sources
 
-Total fixtures: **598**
+Total fixtures: **599**
 
 ## Summary
 
 - **external**: 192 fixtures
 - **external_unresolved**: 29 fixtures
-- **generated**: 377 fixtures
+- **generated**: 378 fixtures
 
 ## External Sources
 
@@ -248,4 +248,6 @@ These fixtures are claimed to be from an external source but the exact path coul
 
 ## Generated Fixtures
 
-Total generated: 377
+- `sample-ahk` — generator: CodeFormatGenerator._ahk (AutoHotkey v1), SHA-256: `a4646270dfb8633cb0a46f2c32eed6f056dcd4f624443c095bd9d0b0703b23cb`
+
+Total generated: 378

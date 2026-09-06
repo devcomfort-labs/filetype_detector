@@ -1,0 +1,380 @@
+{
+  "schema_version": 4,
+  "actions": [
+    {
+      "action": "dicom",
+      "inventory_id": "sample-dcm",
+      "validator_command": "python .audit/w3_validate.py --id sample-dcm",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "promoted to authoritative inventory",
+      "promotion_input": true,
+      "validator_evidence": [
+        "pydicom read of DICOM preamble, file meta, and PatientName"
+      ]
+    },
+    {
+      "action": "dsstore",
+      "inventory_id": "sample-dsstore",
+      "validator_command": "python .audit/w3_validate.py --id sample-dsstore",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "promoted to authoritative inventory",
+      "promotion_input": true,
+      "validator_evidence": [
+        "ds-store 1.3.3 Bud1 header and Iloc record traversal"
+      ]
+    },
+    {
+      "action": "emf",
+      "inventory_id": "sample-emf",
+      "validator_command": "python .audit/metafile_validate.py --id sample-emf",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "promoted to authoritative inventory",
+      "promotion_input": true,
+      "validator_evidence": [
+        "EMF/WMF record-walk assertions",
+        "LibreOffice Draw import/export to non-empty PDF"
+      ]
+    },
+    {
+      "action": "hlp",
+      "inventory_id": "sample-hlp",
+      "validator_command": "python .audit/hlp_validate.py --id sample-hlp",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "promoted to authoritative inventory",
+      "promotion_input": true,
+      "validator_evidence": [
+        "winhlp HelpFile parse and internal files passed"
+      ]
+    },
+    {
+      "action": "macho",
+      "inventory_id": "sample-macho",
+      "validator_command": "python .audit/macho_validate.py",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "MIME/extension authority and promotion pending",
+      "promotion_input": false,
+      "validator_evidence": [
+        "macholib parsed one Mach-O header"
+      ]
+    },
+    {
+      "action": "mum",
+      "inventory_id": null,
+      "validator_command": "python .audit/w3_validate.py --id sample-mum",
+      "format_validity": "not-run",
+      "content_identifiability": null,
+      "evidence_gap": "inventory record absent",
+      "promotion_input": false
+    },
+    {
+      "action": "outlook",
+      "inventory_id": null,
+      "validator_command": "python .audit/w3_validate.py --id sample-outlook",
+      "format_validity": "not-run",
+      "content_identifiability": null,
+      "evidence_gap": "inventory record absent",
+      "promotion_input": false
+    },
+    {
+      "action": "pythonbytecode",
+      "inventory_id": "sample-pyc",
+      "validator_command": "python .audit/w3_validate.py --id sample-pyc",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "promoted to authoritative inventory",
+      "promotion_input": true,
+      "validator_evidence": [
+        "CPython magic number, header, and marshal code object"
+      ]
+    },
+    {
+      "action": "pytorch",
+      "inventory_id": null,
+      "validator_command": "python .audit/w3_validate.py --id sample-pytorch",
+      "format_validity": "not-run",
+      "content_identifiability": null,
+      "evidence_gap": "inventory record absent",
+      "promotion_input": false
+    },
+    {
+      "action": "squashfs",
+      "inventory_id": "sample-squashfs",
+      "validator_command": "python .audit/w3_validate.py --id sample-squashfs",
+      "format_validity": "verified",
+      "content_identifiability": "generic-container",
+      "evidence_gap": "promoted to authoritative inventory",
+      "promotion_input": true,
+      "validator_evidence": [
+        "SquashFS 4.0 superblock",
+        "unsquashfs extraction of sample.txt -> Hello, World!"
+      ]
+    },
+    {
+      "action": "wmf",
+      "inventory_id": "sample-wmf",
+      "validator_command": "python .audit/metafile_validate.py --id sample-wmf",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "promoted to authoritative inventory",
+      "promotion_input": true,
+      "validator_evidence": [
+        "EMF/WMF record-walk assertions",
+        "LibreOffice Draw import/export to non-empty PDF"
+      ]
+    },
+    {
+      "action": "zlibstream",
+      "inventory_id": "sample-zlibstream",
+      "validator_command": "python .audit/w3_validate.py --id sample-zlibstream",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "zlib stream decompressed to deterministic payload"
+      ]
+    },
+    {
+      "action": "ace",
+      "inventory_id": "sample-ace",
+      "validator_command": "python .audit/w3_validate.py --id sample-ace",
+      "format_validity": "needs_review",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "independent parser validation not yet executed"
+      ]
+    },
+    {
+      "action": "cab",
+      "inventory_id": "sample-cab",
+      "validator_command": "python .audit/w3_validate.py --id sample-cab",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "CFHEADER/CFFOLDER/CFFILE/CFDATA offsets and lengths"
+      ]
+    },
+    {
+      "action": "chm",
+      "inventory_id": "sample-chm",
+      "validator_command": "python .audit/w3_validate.py --id sample-chm",
+      "format_validity": "needs_review",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "independent parser validation not yet executed"
+      ]
+    },
+    {
+      "action": "crx",
+      "inventory_id": "sample-crx",
+      "validator_command": "python .audit/w3_validate.py --id sample-crx",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "RSA-SHA1 signature and manifest.json"
+      ]
+    },
+    {
+      "action": "deb",
+      "inventory_id": "sample-deb",
+      "validator_command": "python .audit/w3_validate.py --id sample-deb",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "ar members and gzip tar archives"
+      ]
+    },
+    {
+      "action": "dex",
+      "inventory_id": "sample-dex",
+      "validator_command": "python .audit/w3_validate.py --id sample-dex",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "file size, SHA-1, Adler-32, and string-data map item"
+      ]
+    },
+    {
+      "action": "elf",
+      "inventory_id": "sample-elf",
+      "validator_command": "readelf -h tests/fixtures/sample.elf",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "readelf ELF header"
+      ]
+    },
+    {
+      "action": "icns",
+      "inventory_id": "sample-icns",
+      "validator_command": "/tmp/format-validators/bin/python -c \"from PIL import Image; Image.open('tests/fixtures/sample.icns').load()\"",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "Pillow Image.open ICNS"
+      ]
+    },
+    {
+      "action": "lha",
+      "inventory_id": "sample-lha",
+      "validator_command": "python .audit/w3_validate.py --id sample-lha",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "method, filename, and stored payload"
+      ]
+    },
+    {
+      "action": "swf",
+      "inventory_id": "sample-swf",
+      "validator_command": "python .audit/w3_validate.py --id sample-swf",
+      "format_validity": "needs_review",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "independent parser validation not yet executed"
+      ]
+    },
+    {
+      "action": "webm",
+      "inventory_id": "sample-webm",
+      "validator_command": "ffprobe -v error -show_entries format=format_name tests/fixtures/sample.webm",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "ffprobe WebM decode/container"
+      ]
+    },
+    {
+      "action": "xar",
+      "inventory_id": "sample-xar",
+      "validator_command": "python .audit/w3_validate.py --id sample-xar",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "compressed TOC length and SHA-1"
+      ]
+    },
+    {
+      "action": "woff",
+      "inventory_id": "sample-woff",
+      "validator_command": "/tmp/format-validators/bin/python -c \"from fontTools.ttLib import TTFont; TTFont('tests/fixtures/sample.woff')\"",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "fontTools TTFont WOFF reopen"
+      ]
+    },
+    {
+      "action": "flac",
+      "inventory_id": "sample-flac",
+      "validator_command": "ffprobe -v error -show_entries format=format_name tests/fixtures/sample.flac",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "ffprobe FLAC decode/container"
+      ]
+    },
+    {
+      "action": "tga",
+      "inventory_id": "sample-tga",
+      "validator_command": "/tmp/format-validators/bin/python -c \"from PIL import Image; Image.open('tests/fixtures/sample.tga').load()\"",
+      "format_validity": "verified",
+      "content_identifiability": "distinctive",
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "Pillow Image.open TGA"
+      ]
+    },
+    {
+      "action": "rpm",
+      "inventory_id": "sample-rpm",
+      "validator_command": "python .audit/w3_validate.py --id sample-rpm",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "RPM lead/header and newc CPIO payload"
+      ]
+    },
+    {
+      "action": "snap",
+      "inventory_id": "sample-snap",
+      "validator_command": "python .audit/w3_validate.py --id sample-snap",
+      "format_validity": "verified",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "SquashFS 4.0 superblock",
+        "unsquashfs extraction of sample.txt -> Hello, World!"
+      ]
+    },
+    {
+      "action": "msi",
+      "inventory_id": "sample-msi",
+      "validator_command": "python .audit/full-corpus-audit.py --check",
+      "format_validity": "failed",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "same SHA256 bytes claimed as multiple CFB semantic formats"
+      ]
+    },
+    {
+      "action": "one",
+      "inventory_id": "sample-one",
+      "validator_command": "python .audit/full-corpus-audit.py --check",
+      "format_validity": "failed",
+      "content_identifiability": null,
+      "evidence_gap": "candidate remains non-verified; see candidate format_validity and review reason",
+      "promotion_input": false,
+      "validator_evidence": [
+        "same SHA256 bytes claimed as multiple CFB semantic formats"
+      ]
+    }
+  ],
+  "w4_apk": {
+    "inventory_id": "sample-apk",
+    "validator_command": "python .audit/apk_validate.py --id sample-apk",
+    "format_validity": "needs_review",
+    "content_identifiability": null,
+    "evidence_gap": "androguard container parse only; semantic package review pending",
+    "promotion_input": false
+  }
+}

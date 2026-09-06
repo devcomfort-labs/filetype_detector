@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "generated_by": ".audit/coverage-report.py",
+  "candidate": {
+    "total": 606,
+    "verified": 17,
+    "excluded": 589
+  },
+  "authoritative": {
+    "total": 17
+  },
+  "w3_matrix": {
+    "total": 31,
+    "verified": 23,
+    "missing_inventory": 3,
+    "needs_review": 3,
+    "failed": 2,
+    "missing_actions": [
+      "mum",
+      "outlook",
+      "pytorch"
+    ],
+    "needs_review_actions": [
+      "ace",
+      "chm",
+      "swf"
+    ]
+  },
+  "notes": [
+    "Recognition-label coverage and suffix coverage are separate metrics.",
+    "Promotion requires all truth axes and evidence.",
+    "Selected platform-specific validators run in dedicated CI jobs before matrix updates."
+  ]
+}

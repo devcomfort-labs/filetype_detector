@@ -10,7 +10,11 @@ from pathlib import Path
 import re
 from typing import Sequence
 
-from scripts.conformance.inventory import InventoryValidationError, review_summary
+from scripts.conformance.inventory import (
+    InventoryValidationError,
+    load_verified_inventory,
+    review_summary,
+)
 
 
 _RECORD_ID_PATTERN = re.compile(r"[^A-Za-z0-9]+")
@@ -117,7 +121,7 @@ def _seed_candidates(source: Path, output: Path, *, root: Path) -> None:
 
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        json.dumps({"schema_version": 1, "records": records}, indent=2) + "\n",
+        json.dumps({"schema_version": 2, "records": records}, indent=2) + "\n",
         encoding="utf-8",
     )
 
@@ -299,7 +303,9 @@ def _promote_candidates(
                 )
                 fixed.append(record_id)
 
-    # Build promotion set
+    # Build promotion set, excluding records fixed in this call (two-phase contract:
+    # --fix-extensions corrects aliases but does NOT promote; a separate call
+    # with fresh evidence promotes).
     promote_ids: set[str]
     if ids is not None:
         promote_ids = set(ids)
@@ -316,6 +322,11 @@ def _promote_candidates(
                 "extensions",
             )
         }
+
+    # Two-phase contract: --fix-extensions corrects aliases but does NOT
+    # promote in the same call. Fixed records stay needs_review until a
+    # separate promote call with fresh evidence runs.
+    promote_ids.difference_update(fixed)
 
     promoted: list[str] = []
     skipped: list[str] = []
@@ -355,12 +366,16 @@ def _promote_candidates(
                 gt.get("mime_types"), f"{record_id} mime_types"
             )
         ]
-        gt["extensions"] = [
-            ext.lower()
-            for ext in _require_string_list(
-                gt.get("extensions"), f"{record_id} extensions"
-            )
-        ]
+        raw_extensions = gt.get("extensions")
+        if record.get("probe_filename") is not None and raw_extensions == []:
+            gt["extensions"] = []
+        else:
+            gt["extensions"] = [
+                ext.lower()
+                for ext in _require_string_list(
+                    raw_extensions, f"{record_id} extensions"
+                )
+            ]
 
         record["ground_truth_review"] = {
             "status": "verified",
@@ -370,6 +385,26 @@ def _promote_candidates(
         }
         promoted.append(record_id)
         verified_records.append(record)
+
+    # Pre-write validation: run the full schema v2 loader on a temp copy
+    # to catch all structural/coverage issues before touching real files.
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_cand = Path(tmp_dir) / "candidates.json"
+        tmp_inv = Path(tmp_dir) / "inventory.json"
+        tmp_cand.write_text(
+            json.dumps(
+                {**candidates_payload, "schema_version": 2, "records": records},
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        tmp_inv.write_text(
+            json.dumps({"schema_version": 2, "records": verified_records}, indent=2),
+            encoding="utf-8",
+        )
+        load_verified_inventory(tmp_cand, tmp_inv, root=root)
 
     # Write updated candidates
     candidates_payload["records"] = records

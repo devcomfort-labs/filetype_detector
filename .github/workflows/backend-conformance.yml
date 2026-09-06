@@ -9,6 +9,8 @@ on:
       - "tests/fixtures/**"
       - "pyproject.toml"
       - "requirements*.lock"
+      - ".audit/**"
+      - "scripts/generators/**"
       - ".github/workflows/backend-conformance.yml"
   workflow_dispatch:
   schedule:
@@ -48,9 +50,45 @@ jobs:
           python -m pip install -r requirements-dev.lock
           python -m pip install --no-deps -e .
 
-      - name: Install ffmpeg for audio generators
+      - name: Install pinned APK audit dependency
         shell: bash
-        run: sudo apt-get install -y ffmpeg
+        run: python -m pip install -r .audit/requirements-apk.txt
+
+      - name: Install pinned HLP audit dependency
+        shell: bash
+        run: python -m pip install -r .audit/requirements-hlp.txt
+
+      - name: Install pinned Mach-O audit dependency
+        shell: bash
+        run: python -m pip install -r .audit/requirements-macho.txt
+
+      - name: Validate WinHelp fixture
+        shell: bash
+        run: python .audit/hlp_validate.py --id sample-hlp
+
+      - name: Validate Mach-O fixture
+        shell: bash
+        run: python .audit/macho_validate.py
+
+      - name: Validate APK binary XML with androguard
+        shell: bash
+        run: python .audit/apk_validate.py --id sample-apk
+
+      - name: Install Linux archive audit tools
+        shell: bash
+        run: sudo apt-get install -y ffmpeg squashfs-tools libreoffice
+
+      - name: Validate SquashFS extraction
+        shell: bash
+        run: python .audit/w3_validate.py --id sample-squashfs
+
+      - name: Validate EMF import/export
+        shell: bash
+        run: python .audit/metafile_validate.py --id sample-emf
+
+      - name: Validate WMF import/export
+        shell: bash
+        run: python .audit/metafile_validate.py --id sample-wmf
 
       - name: Run exact-byte gate and determinism tests
         shell: bash

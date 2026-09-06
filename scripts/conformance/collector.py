@@ -29,7 +29,10 @@ class CollectionValidationError(ValueError):
 def stage_probe(record: InventoryRecord, *, root: Path) -> Iterator[Path]:
     """Copy a reviewed fixture to a temporary path with its declared suffix."""
     with TemporaryDirectory(prefix="filetype-conformance-") as directory:
-        probe = Path(directory, f"probe{record.probe_extension}")
+        if record.probe_filename:
+            probe = Path(directory, record.probe_filename)
+        else:
+            probe = Path(directory, f"probe{record.probe_extension}")
         copyfile(root / record.fixture.path, probe)
         if _file_digest(probe) != record.fixture.sha256:
             raise ValueError(
@@ -56,9 +59,11 @@ def collect_observation(
     """Collect one backend result without substituting another backend."""
     platform_info = _platform_info(runner_label)
     runtime_info = _runtime_info()
+    probe_name: str | None = None
     try:
         inferencer = _inferencer_for_backend(backend)
         with stage_probe(record, root=root) as probe:
+            probe_name = probe.name
             result = inferencer.infer(probe)
     except Exception as error:
         return _error_observation(
@@ -91,6 +96,7 @@ def collect_observation(
             semantic=semantic,
             ground_truth=record.ground_truth,
             status=status,
+            probe_name=probe_name,
         ),
     }
 

@@ -1,0 +1,42 @@
+# W4 Subtype and Model-Limit Sign-off
+
+Date: 2026-08-28
+Branch: `gt/coverage-expansion`
+
+## Scope
+
+This sign-off records the validation evidence for the W4 subtype fixtures and the seven labels accepted as locked-model limits. Detector output is recorded as an observation only; it is not Ground Truth evidence.
+
+## Subtype fixtures
+
+| Fixture | Independent validation | Locked Magika observation | Disposition |
+|---|---|---|---|
+| `sample.apk` | Androguard 4.1.4 `APK.is_valid_APK()` parsed the committed ZIP and binary AXML `manifest` root; embedded DEX member present | `jar` (0.96) | **Not promoted**: human MIME/subtype review remains; Magika label is not Ground Truth |
+| `sample.xpi` | ZIP member inventory checked; `manifest.json` is valid JSON with manifest version, name, and version | `xpi` (0.91) | Candidate remains excluded pending independent XPI package validation |
+| `sample.ai` | `pdfinfo` opens the committed one-page PDF; exact generator↔fixture bytes match; Adobe documents AI files may contain PDF-compatible data, but this marker is not native Illustrator PGF | `pdf` (0.89) | **Not promoted**: PDF compatibility is not proof of Illustrator semantics; authority: [Adobe supported file formats](https://helpx.adobe.com/illustrator/desktop/get-started/learn-the-basics/supported-file-formats.html) |
+| `sample.textproto` | Fixture contains protobuf text-field syntax: scalar fields, nested message, boolean, and repeated list syntax | `yaml` (0.83) | Accepted as ambiguous model behavior; no subtype claim promoted |
+| `sample.jinja` | Fixture contains Jinja delimiters, inheritance, block, filter, loop, and conditional syntax | `twig` (0.68) | Accepted as ambiguous model behavior; no subtype claim promoted |
+
+The APK and AI records remain quarantined because the available checks do not establish the complete subtype semantics. XPI has a valid extension manifest marker but remains excluded until an independent package validator is added.
+
+## Accepted locked-model limits
+
+These labels were measured against the current locked Magika model. Only entries with independently validated fixture bytes may be accepted as model limits. Unvalidated or invalid fixtures are kept separate and fail closed.
+
+| Target label | Fixture size | Observed locked label | Disposition |
+|---|---:|---|---|
+| `aidl` | 52 B | `txt` (0.49) | Accepted model limit; text syntax is not distinguishable to the locked model |
+| `dm` | 29 B | `txt` (0.25) | Accepted model limit |
+| `dwg` | 134 B | `txt` (0.31) | **Unvalidated fixture**; do not classify as a model limit until an independent DWG parser succeeds |
+| `sgml` | 75 B | `txt` (0.30) | Accepted model limit |
+| `sum` | 45 B | `txt` (0.52) | Accepted model limit |
+| `ttf` | 80 B | `coff` (0.93) | **Unvalidated fixture**; 80-byte sample is not a valid font parser input |
+| `pdb` | 304 B | `proteindb` (1.00) | Accepted borderline classification; model collision is documented |
+
+## Gate decision
+
+- No W4 subtype fixture is promoted solely from a Magika label.
+- `textproto` and `jinja` are signed off as ambiguous model behavior, not as successful target-label recognition.
+- `aidl`, `dm`, `sgml`, `sum`, and `pdb` remain signed model-limit observations.
+- `dwg` and `ttf` are excluded as unvalidated fixtures, not signed model limits.
+- Authoritative promotion remains gated on source integrity, independent format validity, MIME evidence, and content identifiability.
