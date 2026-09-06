@@ -1,49 +1,45 @@
-# Fixture Tool Installation Dossier
+# 포맷별 생성·검증 도구 안내서
 
-This document is the required precondition for fixtures that need external tools. It records what the extension means, how the bytes are constructed, which tools are needed, how to install them per OS, and which repository script performs generation or validation.
+이 문서는 외부 도구가 필요한 테스트용 샘플 파일을 만들고 확인하는 방법을 설명한다. 문서에는 확장자 설명, 파일 구성, 생성 방법, 필요한 도구, 운영체제별 설치 방법, 실행할 스크립트, 버전과 라이선스를 기록한다.
 
-## OS installation entry points
+## 운영체제별 설치
 
-Run the script for the target operating system before generating or validating fixtures.
-
-| OS | Script | Installation behavior |
+| 운영체제 | 실행할 파일 | 설치 내용과 실패 조건 |
 |---|---|---|
-| Linux | [`scripts/install-fixture-tools-linux.sh`](../../scripts/install-fixture-tools-linux.sh) | Installs `ffmpeg`, `libreoffice`, `squashfs-tools`, pinned Python audit packages, and `ds-store`. Requires `apt-get` and `sudo`; otherwise exits `unsupported`. |
-| macOS | [`scripts/install-fixture-tools-macos.sh`](../../scripts/install-fixture-tools-macos.sh) | Installs Homebrew formulae `ffmpeg` and `squashfs-tools`, the LibreOffice cask, and pinned Python audit packages. Requires Homebrew and `unsquashfs`; otherwise exits `unsupported`. |
-| Windows | [`scripts/install-fixture-tools-windows.ps1`](../../scripts/install-fixture-tools-windows.ps1) | Installs FFmpeg and LibreOffice with `winget`, then Python audit packages. It exits `unsupported` when `unsquashfs.exe` is unavailable because the SquashFS validator cannot run. |
+| Linux | [`scripts/install-fixture-tools-linux.sh`](../../scripts/install-fixture-tools-linux.sh) | `ffmpeg`, LibreOffice, `squashfs-tools`, APK/HLP/Mach-O/DS_Store 점검 도구를 설치한다. `apt-get` 또는 `sudo`가 없으면 지원하지 않는 환경으로 보고 실패한다. |
+| macOS | [`scripts/install-fixture-tools-macos.sh`](../../scripts/install-fixture-tools-macos.sh) | Homebrew로 `ffmpeg`, `squashfs-tools`, LibreOffice와 Python 점검 도구를 설치한다. `unsquashfs`를 설치하지 못하면 SquashFS 점검을 지원하지 않는 환경으로 실패한다. |
+| Windows | [`scripts/install-fixture-tools-windows.ps1`](../../scripts/install-fixture-tools-windows.ps1) | `winget`으로 FFmpeg와 LibreOffice를 설치하고 Python 점검 도구를 설치한다. `unsquashfs.exe`가 없으면 SquashFS 점검을 지원하지 않는 환경으로 명확히 실패한다. |
 
-All scripts are intended to be idempotent. They install audit-only tools; these tools are not runtime dependencies of `filetype-detector`.
+설치 스크립트는 이미 설치된 도구를 다시 실행해도 안전해야 한다. 이 도구들은 `filetype-detector`를 실행할 때 필요한 것이 아니라 테스트용 샘플 파일을 만들고 확인할 때만 필요하다.
 
-## Format dossiers
+## 포맷별 안내
 
-| Extension / filename | What the format means and how the file is structured | Construction method | Independent tool | Installation command / method | Repository script |
+| 확장자 또는 파일명 | 어떤 파일인가 | 파일을 만드는 방법 | 독립 확인 도구 | 설치 방법 | 관련 코드 |
 |---|---|---|---|---|---|
-| `.dcm` / DICOM | 128-byte preamble, `DICM` marker, File Meta Information, transfer syntax, and dataset elements | `DataFormatGenerator._create_dcm` with fixed metadata and `pydicom.dcmwrite` | `pydicom.dcmread` | Included in the locked fixture environment; otherwise `python -m pip install -r requirements-dev.lock` | `scripts/generators/data_formats.py`; `.audit/w3_validate.py --id sample-dcm` |
-| `.pyc` / Python bytecode | CPython magic number, fixed header, and marshalled code object | `ExecutableGenerator._create_pyc` using `compile("pass", "<module>", "exec")` and `marshal` | CPython magic/header check plus `marshal.loads` | `python -m pip install -r requirements-dev.lock` | `scripts/generators/executables.py`; `.audit/w3_validate.py --id sample-pyc` |
-| `.snap` / `.squashfs` | SquashFS 4.0 superblock and compressed filesystem blocks; `.snap` is a package convention over a SquashFS image | Pinned reproducible SquashFS bytes generated with fixed timestamps and embedded for portable reproduction | `unsquashfs` extraction; `squashfs-tools` | Linux: `sudo apt-get install squashfs-tools`; macOS: `brew install squashfs-tools`; Windows: explicitly unsupported unless `unsquashfs.exe` is supplied | `scripts/generators/archives.py`; `.audit/w3_validate.py --id sample-snap` / `sample-squashfs` |
-| `.dsstore` fixture staged as `.DS_Store` | macOS Desktop Services Store, including `Bud1` header, B-tree metadata, and typed records such as `Iloc`; the exact filename is `.DS_Store`, not a normative `.dsstore` extension | `MacOSGenerator._create_dsstore` with deterministic `Iloc` entry | `ds-store==1.3.3` parser reopen and record traversal | `python -m pip install ds-store==1.3.3`, or run the OS installer script | `scripts/generators/macos.py`; `.audit/w3_validate.py --id sample-dsstore` |
-| `.apk` | ZIP package containing binary Android XML, DEX, and package metadata | `ArchiveGenerator._create_apk` | `androguard==4.1.4`; current result is container/AXML validation, not full Android application semantics | `python -m pip install -r .audit/requirements-apk.txt` | `scripts/generators/archives.py`; `.audit/apk_validate.py --id sample-apk` |
-| `.hlp` | Windows Help file with header, directory B-tree, `|SYSTEM`, `|TOPIC`, and related internal files | Immutable upstream `FXSEARCH.HLP` fixture pinned to an upstream commit | `winhlp==0.3.0` parser | `python -m pip install -r .audit/requirements-hlp.txt` | `.audit/hlp_validate.py --id sample-hlp` |
-| `.emf` | Enhanced Metafile header and EMF records such as header, move, line, and EOF | `ImageGenerator._create_emf` | Structural record assertions plus LibreOffice Draw import/export | Linux/macOS: install LibreOffice through the OS installer script; Windows requires a supported LibreOffice installation | `scripts/generators/images.py`; `.audit/metafile_validate.py --id sample-emf` |
-| `.wmf` | Windows Metafile header and 16-bit records such as `META_MOVETO`, `META_LINETO`, and EOF | `ImageGenerator._create_wmf` | Structural record assertions plus LibreOffice Draw import/export | Same LibreOffice installation procedure as EMF | `scripts/generators/images.py`; `.audit/metafile_validate.py --id sample-wmf` |
-| `.flac` | FLAC stream marker, STREAMINFO metadata, audio frame, and checksums | Pinned decodable bytes produced from a deterministic silent audio recipe | `ffprobe`/`ffmpeg` decode | Linux: `sudo apt-get install ffmpeg`; macOS: `brew install ffmpeg`; Windows: install FFmpeg from the installer/script | `scripts/generators/audio.py`; fixture generator tests |
-| `.webm` | EBML/WebM header, Segment, tracks, and encoded media payload | Pinned bytes produced from a deterministic VP9 recipe | `ffprobe`/`ffmpeg` decode | Same FFmpeg installation procedure as FLAC | `scripts/generators/video.py`; fixture generator tests |
-| `.woff` | WOFF header, table directory, and valid sfnt tables such as `head`, `glyf`, `name`, and `post` | FontTools-generated WOFF bytes embedded for portable reproduction | `fontTools.ttLib.TTFont` reopen | `python -m pip install -r requirements-dev.lock` | `scripts/generators/fonts.py`; exact-byte gate |
-| `.tga` | TGA pixel/header/footer structure | Image generator with fixed pixels and TGA 2.0 footer | Pillow image decode | `python -m pip install -r requirements-dev.lock` | `scripts/generators/images.py`; fixture generator tests |
-| `.icns` | ICNS icon chunk containing a valid PNG payload | Image generator with fixed PNG bytes | Pillow image decode | `python -m pip install -r requirements-dev.lock` | `scripts/generators/images.py`; fixture generator tests |
-| `.macho` | 64-bit Mach-O header and load command; `.macho` is a non-standard extension and does not itself establish MIME authority | `ExecutableGenerator._create_macho` | `macholib==1.16.4` parses the Mach-O header | `python -m pip install -r .audit/requirements-macho.txt` | `scripts/generators/executables.py`; `.audit/macho_validate.py` |
-| `.cab`, `.crx`, `.deb`, `.dex`, `.rpm`, `.xar`, `.lha` | Each uses its own archive/header/record structure; these are not validated by a shared ZIP fallback | Dedicated generator methods | Format-specific structural parser, cryptographic check, `tarfile`, or archive tool as recorded in the W3 matrix | Use the Linux/macOS/Windows installer or locked Python fixture dependencies as applicable | `scripts/generators/archives.py`, `scripts/generators/executables.py`; `.audit/w3_validate.py` |
-| `.ai` | Illustrator files can contain PDF-compatible data, but a valid PDF alone does not prove native Illustrator PGF semantics | Deterministic PDF-compatible generator retaining Illustrator markers | `pdfinfo` confirms PDF structure; it does not establish native Illustrator semantics | `pdfinfo` is supplied by Poppler on Linux/macOS; Windows requires a Poppler installation | `scripts/generators/documents.py`; exact-byte gate; remains quarantined for subtype promotion |
+| `.dcm` / DICOM | 128바이트 preamble, `DICM`, File Meta와 데이터 요소를 가진 의료 영상 파일 | pydicom으로 고정된 metadata를 기록 | `pydicom.dcmread` | `python -m pip install -r requirements-dev.lock` | `scripts/generators/data_formats.py`, `.audit/w3_validate.py --id sample-dcm` |
+| `.pyc` | CPython이 읽는 Python bytecode | 고정된 `<module>` 이름으로 compile 후 marshal 저장 | CPython magic/header와 marshal 읽기 | `python -m pip install -r requirements-dev.lock` | `scripts/generators/executables.py`, `.audit/w3_validate.py --id sample-pyc` |
+| `.snap` / `.squashfs` | SquashFS 4.0 압축 파일 시스템. `.snap`은 이를 사용하는 패키지 관례 | 고정된 시간 정보를 사용한 재현 가능한 bytes | `unsquashfs`로 실제 파일 추출 | Linux `sudo apt-get install squashfs-tools`; macOS `brew install squashfs-tools`; Windows는 `unsquashfs.exe`가 따로 있을 때만 지원 | `scripts/generators/archives.py`, `.audit/w3_validate.py` |
+| `.DS_Store` | macOS 폴더 표시 정보를 저장하는 파일. `.dsstore` 확장자가 아니라 정확한 파일명 규칙을 사용 | `ds-store==1.3.3`으로 `Iloc` record 생성 | ds-store parser로 다시 열고 record 확인 | `python -m pip install ds-store==1.3.3` | `scripts/generators/macos.py`, `.audit/w3_validate.py --id sample-dsstore` |
+| `.apk` | ZIP 안에 Android binary XML, DEX, package 정보가 들어 있는 Android 패키지 | APK generator가 ZIP과 binary AXML/DEX를 구성 | `androguard==4.1.4` | `python -m pip install -r .audit/requirements-apk.txt` | `scripts/generators/archives.py`, `.audit/apk_validate.py` |
+| `.hlp` | Windows Help의 header, directory B-tree, `|SYSTEM`, `|TOPIC` 등을 가진 파일 | 고정된 upstream `FXSEARCH.HLP` 사용 | `winhlp==0.3.0` parser | `python -m pip install -r .audit/requirements-hlp.txt` | `.audit/hlp_validate.py --id sample-hlp` |
+| `.emf` / `.wmf` | Windows 그림 명령을 record로 저장하는 파일 | EMF/WMF record generator | 구조 검사와 LibreOffice Draw 변환 | Linux/macOS/Windows 설치 스크립트 사용 | `scripts/generators/images.py`, `.audit/metafile_validate.py` |
+| `.flac` | FLAC stream, STREAMINFO, 오디오 frame과 checksum을 가진 소리 파일 | 고정된 무음 FLAC bytes | `ffprobe` 또는 `ffmpeg` | Linux `sudo apt-get install ffmpeg`; macOS `brew install ffmpeg`; Windows FFmpeg 설치 | `scripts/generators/audio.py` |
+| `.webm` | EBML/WebM header, Segment, track, 영상 payload를 가진 영상 파일 | 고정된 VP9 WebM bytes | `ffprobe` 또는 `ffmpeg` | FLAC과 같은 FFmpeg 설치 방법 | `scripts/generators/video.py` |
+| `.woff` | WOFF header와 `head`, `glyf`, `name` 등 글꼴 table을 가진 웹 글꼴 | FontTools로 생성한 WOFF | `fontTools.ttLib.TTFont` | `python -m pip install -r requirements-dev.lock` | `scripts/generators/fonts.py` |
+| `.tga` / `.icns` | TGA 이미지 또는 PNG를 담은 ICNS 아이콘 | 고정된 pixel과 PNG bytes 생성 | Pillow로 이미지 열기 | `python -m pip install -r requirements-dev.lock` | `scripts/generators/images.py` |
+| `.macho` | 64비트 Mach-O header와 load command를 가진 파일. `.macho`는 표준 확장자가 아님 | Mach-O generator | `macholib==1.16.4` | `python -m pip install -r .audit/requirements-macho.txt` | `scripts/generators/executables.py`, `.audit/macho_validate.py` |
+| `.cab`, `.crx`, `.deb`, `.dex`, `.rpm`, `.xar`, `.lha` | 각자 다른 압축·header·record 구조를 가진 파일 | 포맷별 생성기 | 포맷별 구조 검사, 서명 검사, tar/압축 도구 | 운영체제 설치 스크립트 또는 lock 파일 사용 | `scripts/generators/archives.py`, `scripts/generators/executables.py`, `.audit/w3_validate.py` |
+| `.ai` | Illustrator가 PDF compatible data를 넣을 수 있는 파일. PDF로 열리는 것만으로 native Illustrator 파일이라고 할 수 없음 | Illustrator marker를 포함한 결정론적 PDF generator | `pdfinfo`로 PDF 구조 확인 | Poppler 설치 필요 | `scripts/generators/documents.py` |
 
-## Evidence and promotion policy
+## 공식 정답 등록 기준
 
-A detector label is not format-validity evidence. A fixture may be promoted only when all of the following are recorded:
+감지 프로그램이 특정 이름을 출력했다는 사실만으로는 충분하지 않다. 다음 정보를 모두 기록해야 공식 정답으로 등록할 수 있다.
 
-1. Reproducible generator output or immutable external provenance.
-2. Independent parser, reader, decoder, or round-trip validation when available.
-3. If no independent validator exists, an official producer/writer is acceptable when the producer, version, construction parameters, and resulting format-specific bytes are explicit and reproducible. This is evidence of the construction process, not a detector-label assertion.
-4. MIME and extension or exact-filename authority evidence.
-5. Content identifiability and a clear distinction from generic containers.
-6. Correct source license and tool version information.
+1. 생성 결과가 다시 만들어지거나 외부 출처가 바뀌지 않도록 고정되어야 한다.
+2. 가능하면 독립 parser, reader, decoder 또는 round-trip 도구로 확인한다.
+3. 독립 도구가 없으면 공식 producer/writer로 만든 과정, 버전, 생성 조건, 포맷 전용 bytes를 명확히 기록한다.
+4. MIME과 확장자 또는 정확한 파일명에 대한 근거를 기록한다.
+5. 다른 파일 형식과 구분 가능한지 기록한다.
+6. 출처, 라이선스, 사용 도구 버전을 기록한다.
 
-If a validator is unavailable on an operating system, the script must fail explicitly as unsupported; it must not silently skip the check. The separate coverage report records those gaps instead of turning them into false passes.
+어느 운영체제에서 점검 도구를 사용할 수 없는 경우에는 조용히 통과시키지 않는다. 지원하지 않는 환경이라고 명확히 실패시키고, 그 결과는 파일 커버리지 표에 따로 기록한다.

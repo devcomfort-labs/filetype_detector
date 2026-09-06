@@ -76,3 +76,23 @@ generator를 사용하는 경우 generator symbol, recipe hash, tool version, re
 - promotion은 전용 CLI의 atomic 경로로 실행함
 
 하나라도 부족하면 `needs_review` 또는 `excluded`로 유지한다. detector의 출력 label만으로 Ground Truth를 생성하지 않는다.
+
+## 쉬운 말 사용 규칙
+
+프로젝트의 설명, 점검 결과, 커밋 메시지, 파일 커버리지 보고서는 가능한 한 한국어의 쉬운 말을 사용한다. 전문 용어가 꼭 필요하면 처음 나올 때 쉬운 설명을 괄호로 함께 쓴다.
+
+| 내부 용어 | 사람이 읽는 설명 |
+|---|---|
+| fixture | 테스트용 샘플 파일 |
+| generator | 샘플 파일 생성기 |
+| validator | 독립 검증 도구 |
+| audit | 전체 점검 |
+| candidate | 검토 대기 파일 |
+| authoritative | 공식 정답 파일 |
+| promotion | 공식 정답으로 등록 |
+| evidence | 근거 자료 |
+| provenance | 파일 출처 기록 |
+| content identifiability | 다른 형식과 구분 가능성 |
+| exact-byte | 생성 결과와 저장 파일 내용이 완전히 같음 |
+
+코드의 변수명, JSON 필드명, CLI 명령, 외부 도구 이름은 원래 표기를 유지할 수 있다. 사람이 읽는 설명에서는 위의 쉬운 표현을 우선한다.
