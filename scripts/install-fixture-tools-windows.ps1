@@ -8,6 +8,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 winget install --id Gyan.FFmpeg --exact --accept-source-agreements --accept-package-agreements --silent
 winget install --id TheDocumentFoundation.LibreOffice --exact --accept-source-agreements --accept-package-agreements --silent
 
+py -m pip install -r .audit/requirements-apk.txt
 py -m pip install -r .audit/requirements-hlp.txt
 py -m pip install -r .audit/requirements-macho.txt
 py -m pip install ds-store==1.3.3
